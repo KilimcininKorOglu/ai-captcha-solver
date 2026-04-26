@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -25,6 +26,7 @@ const (
 
 type Config struct {
 	APIKey     string
+	APIKeys    []string
 	Model      string
 	Prompt     string
 	MaxRetries int
@@ -32,7 +34,10 @@ type Config struct {
 }
 
 type Solver struct {
-	cfg Config
+	mu      sync.Mutex
+	keys    []string
+	current int
+	cfg     Config
 }
 
 func New(cfg Config) *Solver {
@@ -48,7 +53,34 @@ func New(cfg Config) *Solver {
 	if cfg.Backoff <= 0 {
 		cfg.Backoff = defaultBackoff
 	}
-	return &Solver{cfg: cfg}
+
+	keys := cfg.APIKeys
+	if len(keys) == 0 && cfg.APIKey != "" {
+		keys = []string{cfg.APIKey}
+	}
+
+	return &Solver{cfg: cfg, keys: keys}
+}
+
+func (s *Solver) nextKey() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if len(s.keys) == 0 {
+		return ""
+	}
+	key := s.keys[s.current%len(s.keys)]
+	s.current++
+	return key
+}
+
+func (s *Solver) rotateKey() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if len(s.keys) == 0 {
+		return ""
+	}
+	s.current++
+	return s.keys[s.current%len(s.keys)]
 }
 
 func (s *Solver) Solve(imageData []byte) (string, error) {
@@ -73,9 +105,14 @@ func (s *Solver) Solve(imageData []byte) (string, error) {
 	}
 
 	apiURL := fmt.Sprintf(geminiAPIURL, s.cfg.Model)
+	currentKey := s.nextKey()
+	if currentKey == "" {
+		return "", fmt.Errorf("no API keys configured")
+	}
 
 	var body []byte
 	var statusCode int
+	keysExhausted := 0
 
 	for attempt := 0; attempt < s.cfg.MaxRetries; attempt++ {
 		req, err := http.NewRequest("POST", apiURL, bytes.NewReader(jsonBody))
@@ -83,7 +120,7 @@ func (s *Solver) Solve(imageData []byte) (string, error) {
 			return "", fmt.Errorf("build request: %w", err)
 		}
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("x-goog-api-key", s.cfg.APIKey)
+		req.Header.Set("x-goog-api-key", currentKey)
 
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
@@ -95,12 +132,27 @@ func (s *Solver) Solve(imageData []byte) (string, error) {
 		resp.Body.Close()
 
 		if statusCode == 429 {
-			wait := parseRetryAfter(resp.Header.Get("Retry-After"), s.cfg.Backoff*time.Duration(1<<attempt))
-			if wait > 2*time.Minute {
-				wait = 2 * time.Minute
+			if len(s.keys) > 1 {
+				nextKey := s.rotateKey()
+				if nextKey != currentKey {
+					log.Printf("captcha solver: key rate limited, rotating to next key (attempt %d/%d)", attempt+1, s.cfg.MaxRetries)
+					currentKey = nextKey
+					keysExhausted = 0
+					continue
+				}
+				keysExhausted++
 			}
-			log.Printf("captcha solver: rate limited, waiting %v (attempt %d/%d)", wait, attempt+1, s.cfg.MaxRetries)
-			time.Sleep(wait)
+
+			if keysExhausted >= len(s.keys) || len(s.keys) <= 1 {
+				wait := parseRetryAfter(resp.Header.Get("Retry-After"), s.cfg.Backoff*time.Duration(1<<attempt))
+				if wait > 2*time.Minute {
+					wait = 2 * time.Minute
+				}
+				log.Printf("captcha solver: all keys rate limited, waiting %v (attempt %d/%d)", wait, attempt+1, s.cfg.MaxRetries)
+				time.Sleep(wait)
+				keysExhausted = 0
+				currentKey = s.nextKey()
+			}
 			continue
 		}
 		break
@@ -111,7 +163,7 @@ func (s *Solver) Solve(imageData []byte) (string, error) {
 		json.Unmarshal(body, &ge)
 		switch statusCode {
 		case 429:
-			return "", fmt.Errorf("rate limit: retries exhausted")
+			return "", fmt.Errorf("rate limit: all keys exhausted after %d retries", s.cfg.MaxRetries)
 		case 401, 403:
 			return "", fmt.Errorf("auth error: %s", ge.Error.Message)
 		default:
