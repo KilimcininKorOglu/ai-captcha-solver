@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -94,7 +95,7 @@ func (s *Solver) Solve(imageData []byte) (string, error) {
 		resp.Body.Close()
 
 		if statusCode == 429 {
-			wait := s.cfg.Backoff * time.Duration(1<<attempt)
+			wait := parseRetryAfter(resp.Header.Get("Retry-After"), s.cfg.Backoff*time.Duration(1<<attempt))
 			if wait > 2*time.Minute {
 				wait = 2 * time.Minute
 			}
@@ -154,4 +155,20 @@ func (s *Solver) Solve(imageData []byte) (string, error) {
 	}
 
 	return code, nil
+}
+
+func parseRetryAfter(header string, fallback time.Duration) time.Duration {
+	if header == "" {
+		return fallback
+	}
+	if seconds, err := strconv.Atoi(header); err == nil {
+		return time.Duration(seconds) * time.Second
+	}
+	if t, err := time.Parse(time.RFC1123, header); err == nil {
+		wait := time.Until(t)
+		if wait > 0 {
+			return wait
+		}
+	}
+	return fallback
 }
