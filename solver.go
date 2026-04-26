@@ -242,6 +242,9 @@ func parseRetryAfter(header string, fallback time.Duration) time.Duration {
 	}
 	if t, err := time.Parse(time.RFC1123, header); err == nil {
 		if wait := time.Until(t); wait > 0 {
+			if wait > fallback {
+				return fallback
+			}
 			return wait
 		}
 	}
