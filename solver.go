@@ -159,7 +159,7 @@ func (s *Solver) Solve(imageData []byte) (string, error) {
 			return "", fmt.Errorf("API request: %w", err)
 		}
 
-		body, _ := io.ReadAll(resp.Body)
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 		statusCode := resp.StatusCode
 		retryAfter := resp.Header.Get("Retry-After")
 		resp.Body.Close()
