@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	defaultModel      = "gemini-2.0-flash"
+	defaultModel      = "gemini-2.5-flash-lite"
 	defaultPrompt     = "Read the CAPTCHA text. Reply with ONLY the characters (letters and numbers), nothing else."
 	defaultMaxRetries = 5
 	defaultBackoff    = 6 * time.Second
