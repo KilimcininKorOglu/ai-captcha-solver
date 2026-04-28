@@ -135,14 +135,14 @@ Available vision models (tested with CAPTCHA solving):
 
 | Model                                     | Speed  | CAPTCHA |
 |-------------------------------------------|--------|---------|
-| `microsoft/phi-4-multimodal-instruct`     | ~400ms | Good    |
-| `nvidia/nemotron-nano-12b-v2-vl`          | ~600ms | Good    |
-| `qwen/qwen3.5-122b-a10b`                 | ~700ms | Good    |
-| `google/gemma-3n-e2b-it`                  | ~6s    | Fair    |
-| `meta/llama-3.2-90b-vision-instruct`      | ~9s    | Fair    |
-| `meta/llama-3.2-11b-vision-instruct`      | -      | Poor    |
-| `meta/llama-4-maverick-17b-128e-instruct` | -      | Poor    |
-| `google/gemma-3n-e4b-it`                  | -      | Poor    |
+| `microsoft/phi-4-multimodal-instruct`     | ~400ms | Best    |
+| `nvidia/nemotron-nano-12b-v2-vl`          | ~600ms | Best    |
+| `qwen/qwen3.5-122b-a10b`                 | ~700ms | Best    |
+| `meta/llama-4-maverick-17b-128e-instruct` | ~2s    | Good    |
+| `meta/llama-3.2-11b-vision-instruct`      | ~4s    | Good    |
+| `google/gemma-3n-e2b-it`                  | ~6s    | Good    |
+| `google/gemma-3n-e4b-it`                  | ~9s    | Good    |
+| `meta/llama-3.2-90b-vision-instruct`      | ~9s    | Good    |
 
 ### Paid API Keys
 
