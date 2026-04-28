@@ -81,23 +81,23 @@ Anahtar havuzu yalnızca Gemini sağlayıcısı için kullanılabilir. OpenAI ve
 
 ## Yapılandırma
 
-| Alan       | Tip      | Varsayılan              | Açıklama                                                              |
-|------------|----------|-------------------------|-----------------------------------------------------------------------|
-| Provider   | string   | `gemini`                | Yapay zeka sağlayıcısı: `gemini`, `openai`, `anthropic`              |
-| BaseURL    | string   | Sağlayıcı varsayılanı   | Özel API base URL'i                                                   |
-| APIKey     | string   |                         | Tek API anahtarı                                                      |
-| APIKeys    | []string |                         | Anahtar havuzu (yalnızca Gemini, APIKey'e göre öncelikli)             |
-| Model      | string   | `gemini-2.5-flash-lite` | Model adı (OpenAI ve Anthropic için zorunlu, Gemini için isteğe bağlı)|
-| Prompt     | string   | Genel CAPTCHA prompt'u  | Yapay zekaya gönderilen özel prompt                                   |
-| MaxRetries | int      | 5                       | Rate limit dışı hatalar için maksimum deneme sayısı                   |
+| Alan       | Tip      | Varsayılan              | Açıklama                                                                              |
+|------------|----------|-------------------------|---------------------------------------------------------------------------------------|
+| Provider   | string   | `gemini`                | Yapay zeka sağlayıcısı: `gemini`, `openai`, `anthropic`                               |
+| BaseURL    | string   | Sağlayıcı varsayılanı   | Özel API base URL'i                                                                   |
+| APIKey     | string   |                         | Tek API anahtarı                                                                      |
+| APIKeys    | []string |                         | Anahtar havuzu (yalnızca Gemini, APIKey'e göre öncelikli)                             |
+| Model      | string   | `gemini-2.5-flash-lite` | Model adı (OpenAI ve Anthropic için zorunlu, Gemini için isteğe bağlı)                |
+| Prompt     | string   | Genel CAPTCHA prompt'u  | Yapay zekaya gönderilen özel prompt                                                   |
+| MaxRetries | int      | 5                       | Rate limit dışı hatalar için maksimum deneme (429 sayılmaz, 5dk deadline ile sınırlı) |
 
 ## Sağlayıcı Varsayılanları
 
-| Sağlayıcı | Varsayılan Base URL                                           | Varsayılan Model        | Anahtar Havuzu |
-|------------|---------------------------------------------------------------|-------------------------|----------------|
-| gemini     | `https://generativelanguage.googleapis.com/v1beta`            | `gemini-2.5-flash-lite` | Evet           |
-| openai     | `https://api.openai.com`                                      | (zorunlu)               | Hayır          |
-| anthropic  | `https://api.anthropic.com`                                   | (zorunlu)               | Hayır          |
+| Sağlayıcı | Varsayılan Base URL                                | Varsayılan Model        | Anahtar Havuzu |
+|-----------|----------------------------------------------------|-------------------------|----------------|
+| gemini    | `https://generativelanguage.googleapis.com/v1beta` | `gemini-2.5-flash-lite` | Evet           |
+| openai    | `https://api.openai.com`                           | (zorunlu)               | Hayır          |
+| anthropic | `https://api.anthropic.com`                        | (zorunlu)               | Hayır          |
 
 ## Rate Limit Yönetimi
 
@@ -106,6 +106,10 @@ Anahtar havuzu yalnızca Gemini sağlayıcısı için kullanılabilir. OpenAI ve
 3. OpenAI/Anthropic: bekleme süresi boyunca uyur, sonra tekrar dener
 4. HTTP 401/403: Gemini anahtarı 24 saat devre dışı bırakır; OpenAI/Anthropic kalıcı hata döndürür
 5. Toplam `Solve` süresi 5 dakikayla sınırlıdır
+
+## Doğrulama
+
+Solver oluşturmadan önce yapılandırmayı kontrol etmek için `captcha.Validate(cfg)` kullanın. API anahtarı eksikse, Gemini dışı bir sağlayıcıyla anahtar havuzu kullanılıyorsa veya OpenAI/Anthropic için model belirtilmemişse hata döndürür.
 
 ## Nasıl Çalışır
 
@@ -127,7 +131,7 @@ Rate limitli ücretsiz katman. [Google AI Studio](https://aistudio.google.com/ap
 ```go
 solver := captcha.New(captcha.Config{
     Provider: "anthropic",
-    BaseURL:  "https://nvidia.srv.hermestech.uk/v1/messages",
+    BaseURL:  "https://nvidia.srv.hermestech.uk",
     APIKey:   "hermes-api-anahtariniz",
     Model:    "microsoft/phi-4-multimodal-instruct",
 })
@@ -139,7 +143,7 @@ CAPTCHA çözümü ile test edilmiş görsel modeller:
 |-------------------------------------------|--------|--------|
 | `microsoft/phi-4-multimodal-instruct`     | ~400ms | En iyi |
 | `nvidia/nemotron-nano-12b-v2-vl`          | ~600ms | En iyi |
-| `qwen/qwen3.5-122b-a10b`                 | ~700ms | En iyi |
+| `qwen/qwen3.5-122b-a10b`                  | ~700ms | En iyi |
 | `meta/llama-4-maverick-17b-128e-instruct` | ~2s    | İyi    |
 | `meta/llama-3.2-11b-vision-instruct`      | ~4s    | İyi    |
 | `google/gemma-3n-e2b-it`                  | ~6s    | İyi    |
