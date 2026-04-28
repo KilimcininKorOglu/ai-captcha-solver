@@ -12,7 +12,7 @@ const (
 	defaultModel      = "gemini-2.5-flash-lite"
 	defaultPrompt     = "This is a CAPTCHA image. What characters are shown? Output ONLY the exact letters and digits, nothing else. No description, no explanation, no quotes. Example output: ab3xk"
 	defaultMaxRetries = 5
-	defaultMaxTokens  = 32
+	defaultMaxTokens  = 64
 	defaultDeadline   = 5 * time.Minute
 )
 
