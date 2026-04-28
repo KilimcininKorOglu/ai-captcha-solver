@@ -24,7 +24,7 @@ RULES:
 GOOD examples: ab3xk, GPNTU, 7m2Kf
 BAD examples: "The text says ab3xk", "CAPTCHA: ab3xk", "I can see the characters..."`
 	defaultMaxRetries = 5
-	defaultMaxTokens  = 64
+	defaultMaxTokens  = 256
 	defaultDeadline   = 5 * time.Minute
 )
 

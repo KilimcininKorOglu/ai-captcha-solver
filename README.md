@@ -112,9 +112,40 @@ Key pooling is only available for the Gemini provider. OpenAI and Anthropic use 
 3. Parses the response, lowercases the text, strips non-alphanumeric characters, validates length (4-8 chars)
 4. Returns the cleaned lowercase CAPTCHA text
 
-## Getting API Keys
+## Free API Providers
 
-- Gemini: [Google AI Studio](https://aistudio.google.com/app/apikey)
+### Gemini (Google)
+
+Free tier with rate limits. Get an API key at [Google AI Studio](https://aistudio.google.com/app/apikey).
+
+### NVIDIA NIM (HermesTech)
+
+Free access to multiple vision models via the Anthropic-compatible API at [HermesTech](https://hermestech.uk). No credit card required.
+
+```go
+solver := captcha.New(captcha.Config{
+    Provider: "anthropic",
+    BaseURL:  "https://nvidia.srv.hermestech.uk/v1/messages",
+    APIKey:   "your-hermes-api-key",
+    Model:    "microsoft/phi-4-multimodal-instruct",
+})
+```
+
+Available vision models (tested with CAPTCHA solving):
+
+| Model                                     | Speed  | CAPTCHA |
+|-------------------------------------------|--------|---------|
+| `microsoft/phi-4-multimodal-instruct`     | ~400ms | Good    |
+| `nvidia/nemotron-nano-12b-v2-vl`          | ~600ms | Good    |
+| `qwen/qwen3.5-122b-a10b`                 | ~700ms | Good    |
+| `google/gemma-3n-e2b-it`                  | ~6s    | Fair    |
+| `meta/llama-3.2-90b-vision-instruct`      | ~9s    | Fair    |
+| `meta/llama-3.2-11b-vision-instruct`      | -      | Poor    |
+| `meta/llama-4-maverick-17b-128e-instruct` | -      | Poor    |
+| `google/gemma-3n-e4b-it`                  | -      | Poor    |
+
+### Paid API Keys
+
 - OpenAI: [OpenAI Platform](https://platform.openai.com/api-keys)
 - Anthropic: [Anthropic Console](https://console.anthropic.com/settings/keys)
 
