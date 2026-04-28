@@ -172,17 +172,19 @@ func (s *Solver) Solve(imageData []byte) (string, error) {
 			continue
 		}
 
+		if statusCode == 401 || statusCode == 403 {
+			masked := maskKey(key)
+			log.Printf("captcha solver: key %s auth failed (HTTP %d), permanently disabled", masked, statusCode)
+			s.markCooldown(key, 24*time.Hour)
+			continue
+		}
+
 		attempt++
 
 		if statusCode != 200 {
 			var ge geminiError
 			json.Unmarshal(body, &ge)
-			switch statusCode {
-			case 401, 403:
-				return "", fmt.Errorf("auth error: %s", truncate(ge.Error.Message, 100))
-			default:
-				return "", fmt.Errorf("API error: HTTP %d - %s", statusCode, truncate(ge.Error.Message, 100))
-			}
+			return "", fmt.Errorf("API error: HTTP %d - %s", statusCode, truncate(sanitizeKeyFromMessage(ge.Error.Message), 100))
 		}
 
 		return extractText(body)
@@ -263,4 +265,19 @@ func truncate(s string, max int) string {
 		return s
 	}
 	return s[:max] + "..."
+}
+
+func sanitizeKeyFromMessage(msg string) string {
+	i := strings.Index(msg, "AIzaSy")
+	if i == -1 {
+		return msg
+	}
+	end := i
+	for end < len(msg) && msg[end] != '\'' && msg[end] != '"' && msg[end] != ' ' && msg[end] != '.' {
+		end++
+	}
+	if end-i > 10 {
+		return msg[:i] + maskKey(msg[i:end]) + msg[end:]
+	}
+	return msg
 }
