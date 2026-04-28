@@ -58,6 +58,14 @@ func truncate(s string, max int) string {
 	return s[:max] + "..."
 }
 
+func buildURL(base, path string) string {
+	base = strings.TrimRight(base, "/")
+	if strings.HasSuffix(base, path) {
+		return base
+	}
+	return base + path
+}
+
 func sanitizeKeyFromMessage(msg string) string {
 	i := strings.Index(msg, "AIzaSy")
 	if i == -1 {

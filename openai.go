@@ -61,7 +61,7 @@ func (o *openaiProvider) Call(imageData []byte, prompt string) (string, error) {
 		return "", fmt.Errorf("marshal request: %w", err)
 	}
 
-	apiURL := o.baseURL + "/v1/chat/completions"
+	apiURL := buildURL(o.baseURL, "/v1/chat/completions")
 
 	req, err := http.NewRequest("POST", apiURL, bytes.NewReader(jsonBody))
 	if err != nil {

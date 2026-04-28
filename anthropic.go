@@ -62,7 +62,7 @@ func (a *anthropicProvider) Call(imageData []byte, prompt string) (string, error
 		return "", fmt.Errorf("marshal request: %w", err)
 	}
 
-	apiURL := a.baseURL + "/v1/messages"
+	apiURL := buildURL(a.baseURL, "/v1/messages")
 
 	req, err := http.NewRequest("POST", apiURL, bytes.NewReader(jsonBody))
 	if err != nil {
