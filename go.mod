@@ -1,3 +1,3 @@
-module github.com/KilimcininKorOglu/gemini-captcha-solver
+module github.com/KilimcininKorOglu/ai-captcha-solver
 
 go 1.26.1
