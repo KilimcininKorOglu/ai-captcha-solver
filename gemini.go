@@ -90,6 +90,30 @@ func (g *geminiProvider) markCooldown(key string, d time.Duration) {
 	g.cooldown[key] = time.Now().Add(d)
 }
 
+// restKey puts a rate-limited key on cooldown for as long as its exhausted
+// quota needs, and reports the wait to the caller.
+func (g *geminiProvider) restKey(key string, body []byte, retryAfter string) error {
+	cooldown, kind := quotaCooldown(body, retryAfter, time.Now())
+	masked := maskKey(key)
+	log.Printf("captcha solver: key %s hit its %s, cooling down %v", masked, kind, cooldown.Round(time.Second))
+	g.markCooldown(key, cooldown)
+	return &RateLimitError{Wait: cooldown, Message: fmt.Sprintf("key %s hit its %s", masked, kind)}
+}
+
+// isAuthFailure reports whether the status means the key itself is refused.
+func isAuthFailure(statusCode int) bool {
+	return statusCode == 401 || statusCode == 403
+}
+
+// disableKey holds a refused key out of the pool for a day, because a rejected
+// key does not start working again within a request.
+func (g *geminiProvider) disableKey(key string, statusCode int) error {
+	masked := maskKey(key)
+	log.Printf("captcha solver: key %s auth failed (HTTP %d), permanently disabled", masked, statusCode)
+	g.markCooldown(key, 24*time.Hour)
+	return &RateLimitError{Wait: 24 * time.Hour, Message: fmt.Sprintf("key %s auth failed", masked)}
+}
+
 func (g *geminiProvider) Call(imageData []byte, prompt string) (string, error) {
 	b64 := base64.StdEncoding.EncodeToString(imageData)
 
@@ -139,18 +163,11 @@ func (g *geminiProvider) Call(imageData []byte, prompt string) (string, error) {
 	resp.Body.Close()
 
 	if statusCode == 429 {
-		cooldown := parseRetryAfter(retryAfter, rpmWindow)
-		masked := maskKey(key)
-		log.Printf("captcha solver: key %s rate limited, cooling down %v", masked, cooldown.Round(time.Second))
-		g.markCooldown(key, cooldown)
-		return "", &RateLimitError{Wait: cooldown, Message: fmt.Sprintf("key %s rate limited", masked)}
+		return "", g.restKey(key, body, retryAfter)
 	}
 
-	if statusCode == 401 || statusCode == 403 {
-		masked := maskKey(key)
-		log.Printf("captcha solver: key %s auth failed (HTTP %d), permanently disabled", masked, statusCode)
-		g.markCooldown(key, 24*time.Hour)
-		return "", &RateLimitError{Wait: 24 * time.Hour, Message: fmt.Sprintf("key %s auth failed", masked)}
+	if isAuthFailure(statusCode) {
+		return "", g.disableKey(key, statusCode)
 	}
 
 	if statusCode != 200 {

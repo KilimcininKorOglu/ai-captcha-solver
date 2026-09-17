@@ -101,7 +101,9 @@ Anahtar havuzu yalnızca Gemini sağlayıcısı için kullanılabilir. OpenAI ve
 
 ## Rate Limit Yönetimi
 
-1. HTTP 429 alındığında, `Retry-After` yanıt başlığındaki süre kadar bekler; başlık yoksa 60 saniye bekler
+1. Gemini'den HTTP 429 alındığında solver `QuotaFailure` detayını okur. `quotaId` içinde `PerDay` geçen kota dakikalar içinde yenilenmez, bu yüzden anahtar Pasifik saatiyle bir sonraki gece yarısına kadar bekler. `PerMinute` kotasında Google'ın döndürdüğü `RetryInfo.retryDelay` kullanılır. İki detay da yoksa `Retry-After` header'ı, o da yoksa 60 saniye uygulanır
+   - Günlük sıfırlama tz veritabanı yerine sabit UTC-8 ofseti kullanır, çünkü gömülü hedeflerde zoneinfo bulunmaz. Yaz saatinde hesaplanan sıfırlama bir saat geç olur
+   - `gemini-2.5-flash-lite` free tier proje başına günde 20 istek verir, bu yüzden büyük bir batch kotayı tüketir ve sonraki her istek sıfırlamaya kadar 429 döner
 2. Gemini anahtar havuzunda: ilgili anahtar beklemeye girer, diğer anahtarlar kullanılabilir kalır
 3. OpenAI/Anthropic: bekleme süresi boyunca uyur, sonra tekrar dener
 4. HTTP 401/403: Gemini anahtarı 24 saat devre dışı bırakır; OpenAI/Anthropic kalıcı hata döndürür

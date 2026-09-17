@@ -101,7 +101,9 @@ Key pooling is only available for the Gemini provider. OpenAI and Anthropic use 
 
 ## Rate Limit Handling
 
-1. On HTTP 429, the solver pauses using the `Retry-After` response header; if absent, falls back to 60 seconds
+1. On HTTP 429 from Gemini, the solver reads the `QuotaFailure` detail. A quota whose `quotaId` contains `PerDay` does not refill within minutes, so the key rests until the next midnight Pacific time. A `PerMinute` quota uses the `RetryInfo.retryDelay` Google returns. With neither detail, the `Retry-After` header applies, and without that, 60 seconds
+   - The daily reset uses a fixed UTC-8 offset, not the tz database, because an embedded target often ships no zoneinfo. During daylight saving the computed reset is one hour late
+   - `gemini-2.5-flash-lite` free tier allows 20 requests per day per project, so a large batch spends the quota and every later request returns 429 until the reset
 2. For Gemini with key pool: the rate-limited key enters per-key cooldown, other keys remain available
 3. For OpenAI/Anthropic: the solver sleeps for the retry duration before retrying
 4. On HTTP 401/403: Gemini disables the key for 24 hours; OpenAI/Anthropic return a fatal error

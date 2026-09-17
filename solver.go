@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	defaultModel      = "gemini-2.5-flash-lite"
-	defaultPrompt     = `Read the CAPTCHA text in this image.
+	defaultModel  = "gemini-2.5-flash-lite"
+	defaultPrompt = `Read the CAPTCHA text in this image.
 
 RULES:
 1. Output ONLY the characters (letters and digits) you see.

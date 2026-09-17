@@ -126,8 +126,8 @@ type openaiMessage struct {
 }
 
 type openaiContentPart struct {
-	Type     string         `json:"type"`
-	Text     string         `json:"text,omitempty"`
+	Type     string          `json:"type"`
+	Text     string          `json:"text,omitempty"`
 	ImageURL *openaiImageURL `json:"image_url,omitempty"`
 }
 

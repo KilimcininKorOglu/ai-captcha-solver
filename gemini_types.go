@@ -10,7 +10,7 @@ type geminiContent struct {
 }
 
 type geminiPart struct {
-	Text       string           `json:"text,omitempty"`
+	Text       string            `json:"text,omitempty"`
 	InlineData *geminiInlineData `json:"inline_data,omitempty"`
 }
 
@@ -40,6 +40,23 @@ type geminiPromptFeedback struct {
 
 type geminiError struct {
 	Error struct {
-		Message string `json:"message"`
+		Message string              `json:"message"`
+		Details []geminiErrorDetail `json:"details"`
 	} `json:"error"`
+}
+
+// geminiErrorDetail is one entry of the google.rpc error details. A 429 carries
+// a QuotaFailure naming the exhausted quota and a RetryInfo suggesting a delay.
+type geminiErrorDetail struct {
+	Type       string                 `json:"@type"`
+	Violations []geminiQuotaViolation `json:"violations"`
+	RetryDelay string                 `json:"retryDelay"`
+}
+
+// geminiQuotaViolation names one exhausted quota. QuotaID tells the window
+// apart: a value with "PerDay" does not refill until the daily reset, while
+// "PerMinute" refills within the minute.
+type geminiQuotaViolation struct {
+	QuotaID    string `json:"quotaId"`
+	QuotaValue string `json:"quotaValue"`
 }

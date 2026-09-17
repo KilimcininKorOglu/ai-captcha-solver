@@ -126,8 +126,8 @@ type anthropicMessage struct {
 }
 
 type anthropicContentBlock struct {
-	Type   string               `json:"type"`
-	Text   string               `json:"text,omitempty"`
+	Type   string                `json:"type"`
+	Text   string                `json:"text,omitempty"`
 	Source *anthropicImageSource `json:"source,omitempty"`
 }
 
@@ -139,7 +139,7 @@ type anthropicImageSource struct {
 
 type anthropicResponse struct {
 	Content    []anthropicResponseBlock `json:"content"`
-	StopReason string                  `json:"stop_reason"`
+	StopReason string                   `json:"stop_reason"`
 }
 
 type anthropicResponseBlock struct {
